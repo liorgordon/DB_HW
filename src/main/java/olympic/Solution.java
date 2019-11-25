@@ -4,15 +4,23 @@ import olympic.business.Athlete;
 import olympic.business.ReturnValue;
 import olympic.business.Sport;
 import olympic.data.DBConnector;
+import olympic.data.PostgreSQLErrorCodes;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import static olympic.business.ReturnValue.OK;
+import static olympic.business.ReturnValue.*;
 
 public class Solution {
+    public static void main(String[] args) {
+        createTables();
+        clearTables();
+       // dropTables();
+    }
+
     public static void createTables() {
 
         Connection connection = DBConnector.getConnection();
@@ -28,7 +36,8 @@ public class Solution {
                     "    PRIMARY KEY (Athlete_ID),\n" +
                     "    CHECK (Athlete_ID > 0)\n" +
                     ")");
-            pstmt.execute();
+            pstmt.executeUpdate();
+            pstmt.close();
         }
         catch (SQLException e) {
             //e.printStackTrace()();
@@ -43,10 +52,11 @@ public class Solution {
                     "    City text NOT NULL,\n" +
                     "    Athlete_count integer ,\n" +
                     "    PRIMARY KEY (Sport_ID),\n" +
-                    "    CHECK (Sport_ID > 0)\n" +
+                    "    CHECK (Sport_ID > 0),\n" +
                     "    CHECK (Athlete_count >= 0)\n" +
                     ")");
             pstmt.execute();
+            pstmt.close();
         }
         catch (SQLException e) {
             //e.printStackTrace()();
@@ -57,17 +67,18 @@ public class Solution {
             // side note: maybe we should enter first place as 3 in order to make the rank function easier
             pstmt = connection.prepareStatement("CREATE TABLE Goes_to\n" +
                     "(\n" +
-                    "    Sport_ID integer,\n" +
+                    "    Sport_ID integer ,\n" +
                     "    Athlete_ID integer,\n" +
                     "    Fee integer,\n" +
                     "    Place integer,\n" +
                     "    FOREIGN KEY (Sport_ID) REFERENCES Sport(Sport_ID),\n" +
-                    "    FOREIGN KEY (Athlete_ID) REFERENCES Sport(Athlete_ID),\n" +
-                    "    CHECK (Place > 0)\n" +
-                    "    CHECK (Place < 4)\n" +
+                    "    FOREIGN KEY (Athlete_ID) REFERENCES Athlete(Athlete_ID),\n" +
+                    "    CHECK (Place > 0),\n" +
+                    "    CHECK (Place < 4),\n" +
                     "    CHECK (fee >= 0)\n" +
                     ")");
             pstmt.execute();
+            pstmt.close();
         }
         catch (SQLException e) {
             //e.printStackTrace()();
@@ -80,8 +91,8 @@ public class Solution {
                     "(\n" +
                     "    Athlete2_ID integer,\n" +
                     "    Athlete1_ID integer,\n" +
-                    "    FOREIGN KEY (Athlete1_ID) REFERENCES Sport(Sport_ID),\n" +
-                    "    FOREIGN KEY (Athlete2_ID) REFERENCES Sport(Athlete_ID),\n" +
+                    "    FOREIGN KEY (Athlete1_ID) REFERENCES Athlete(Athlete_ID),\n" +
+                    "    FOREIGN KEY (Athlete2_ID) REFERENCES Athlete(Athlete_ID),\n" +
                     "    CHECK (Athlete1_ID <> Athlete2_ID)\n" +
                     ")");
             pstmt.execute();
@@ -207,11 +218,49 @@ public class Solution {
     public static ReturnValue addAthlete(Athlete athlete) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
+        try {
+            pstmt = connection.prepareStatement(
+                    "INSERT INTO Athlete \n" +
+                            "VALUES "+
+                            "(?, ?, ?, ?);");
+            pstmt.setInt(1,athlete.getId());
+            pstmt.setString(2,athlete.getName());
+            pstmt.setString(3,athlete.getCountry());
+            pstmt.setBoolean(4,athlete.getIsActive());
+            pstmt.execute();
+        } catch (SQLException e) {
+            if(Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue() ||
+                    Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.NOT_NULL_VIOLATION.getValue()){
+                return BAD_PARAMS;
+            }
+            if(Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.UNIQUE_VIOLATION.getValue()){
+                return  ALREADY_EXISTS;
+            }
+            return ERROR;
+        }
 
         return OK; }
 
     public static Athlete getAthleteProfile(Integer athleteId) {
-        return Athlete.badAthlete();
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT athlete_id, athlete_name, country, active \n" +
+                            "FROM Athlete \n" +
+                            "WHERE Athlete_id = ?;");
+            pstmt.setInt(1, athleteId);
+            ResultSet results = pstmt.executeQuery();
+            Athlete a = Athlete.badAthlete();
+            a.setName(results.getString("athlete_name"));
+            a.setId(results.getInt("athlete_id"));
+            a.setIsActive(results.getBoolean("active"));
+            a.setCountry(results.getString("country"));
+            return a;
+        }
+        catch (SQLException e){
+            return Athlete.badAthlete();
+        }
     }
 
     public static ReturnValue deleteAthlete(Athlete athlete) {

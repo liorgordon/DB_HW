@@ -17,6 +17,28 @@ public class SimpleTest extends AbstractTest{
         a.setIsActive(true);
         ReturnValue ret = Solution.addAthlete(a);
         assertEquals(OK, ret);
+
+        a.setCountry("jamaica");
+        a.setId(-10);
+        a.setIsActive(true);
+        a.setName("lior");
+        ret = Solution.addAthlete(a);
+        assertEquals(BAD_PARAMS, ret);
+
+        a.setCountry(null);
+        a.setId(2);
+        a.setIsActive(true);
+        a.setName("lior");
+        ret = Solution.addAthlete(a);
+        assertEquals(BAD_PARAMS, ret);
+
+        a.setCountry("jamaica");
+        a.setId(2);
+        a.setIsActive(true);
+        a.setName("lior");
+        ret = Solution.addAthlete(a);
+        assertEquals(ALREADY_EXISTS, ret);
+
     }
 
     @Test
