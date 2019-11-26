@@ -102,11 +102,24 @@ public class Solution {
             /*=================Medals View=============================== */
             pstmt = connection.prepareStatement("CREATE View Medals as" +
                     "SELECT athlete_id," +
-                            "COUNT(case when place=1 then 1 else 0 end) gold," +
-                            "COUNT(case when place=2 then 1 else 0 end) silver," +
-                            "COUNT(case when place=3 then 1 else 0 end) bronze" +
-                            "FROM Goes_to" +
-                            "GROUP BY athlete_id");
+                    "COUNT(place=1 OR NULL) gold," +
+                    "COUNT(place=2 OR NULL) silver," +
+                    "COUNT(place=3 OR NULL) bronze" +
+                    "FROM Goes_to" +
+                    "GROUP BY athlete_id");
+            pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
+        }
+
+        try {
+
+            /*=================ShareSport View=============================== */
+            pstmt = connection.prepareStatement("CREATE View ShareSport as" +
+                    "SELECT a1.athlete_id as athlete1_id, a2.athlete_id athlete2_id, s.sport_id," +
+                    "(SELECT count(*) FROM Goes_to g1 WHERE g1.athlete_id = a1.athlete_id and s.sport_id = g1.sport_id) as athlete1_took," +
+                    "(SELECT count(*) FROM Goes_to g2 WHERE g2.athlete_id = a2.athlete_id and s.sport_id = g2.sport_id) as athlete2_took" +
+                    "FROM Athlete a1, Athlete a2, Sports s");
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
@@ -215,7 +228,15 @@ public class Solution {
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
-        } finally {
+        }
+        /*=================== Drop ShareSport ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP VIEW ShareSport ;");
+            pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
+        }finally {
             try {
                 pstmt.close();
             } catch (SQLException e) {
@@ -917,11 +938,57 @@ public class Solution {
     }
 
     public static ArrayList<Integer> getCloseAthletes(Integer athleteId) {
-        return new ArrayList<>();
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        ArrayList<Integer> close_athletes= new ArrayList<Integer>();
+        int num_athletes = 0;
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT athlete_id FROM" +
+                            "FROM ShareSport" +
+                            "WHERE athlete2_id = ?" +
+                            "GROUP BY athlete1_id" +
+                            "HAVING SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5" +
+                            "ORDER BY SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) DESC, athlete_id ASC");
+            pstmt.setInt(1, athleteId);
+            ResultSet results = pstmt.executeQuery();
+            while (results.next() && num_athletes<10) {
+                close_athletes.add(results.getInt("athlete_id"));
+                num_athletes += 1;
+            }
+        } catch (SQLException e) {
+            return close_athletes;
+        }
+        return close_athletes;
     }
 
     public static ArrayList<Integer> getSportsRecommendation(Integer athleteId) {
-        return new ArrayList<>();
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        ArrayList<Integer> sports_recommendation= new ArrayList<Integer>();
+        int num_sports = 0;
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT sport_id" +
+                            "FROM Goes_to" +
+                            "where athlete_id IN" +
+                                "(SELECT athlete_id FROM" +
+                                "FROM ShareSport s" +
+                                "WHERE athlete2_id = ?" +
+                                "GROUP BY athlete1_id" +
+                                "HAVING SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5)" +
+                            "GROUP BY sport_id" +
+                            "ORDER BY count(*) DESC, athlete_id ASC");
+            pstmt.setInt(1, athleteId);
+            ResultSet results = pstmt.executeQuery();
+            while (results.next() && num_sports<3) {
+                sports_recommendation.add(results.getInt("sport_id"));
+                num_sports += 1;
+            }
+        } catch (SQLException e) {
+            return sports_recommendation;
+        }
+        return sports_recommendation;
     }
 }
 
