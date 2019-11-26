@@ -16,9 +16,9 @@ import static olympic.business.ReturnValue.*;
 
 public class Solution {
     public static void main(String[] args) {
-        createTables();
-        clearTables();
-       // dropTables();
+//        createTables();
+//        clearTables();
+//       // dropTables();
     }
 
     public static void createTables() {
@@ -246,16 +246,18 @@ public class Solution {
         PreparedStatement pstmt = null;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT athlete_id, athlete_name, country, active \n" +
+                    "SELECT athlete_id, athlete_name, country, active " +
                             "FROM Athlete \n" +
-                            "WHERE Athlete_id = ?;");
+                            "WHERE athlete_id = ?;");
             pstmt.setInt(1, athleteId);
             ResultSet results = pstmt.executeQuery();
             Athlete a = Athlete.badAthlete();
-            a.setName(results.getString("athlete_name"));
-            a.setId(results.getInt("athlete_id"));
-            a.setIsActive(results.getBoolean("active"));
-            a.setCountry(results.getString("country"));
+            while(results.next()) {
+                a.setId(results.getInt("athlete_id"));
+                a.setName(results.getString("athlete_name"));
+                a.setCountry(results.getString("country"));
+                a.setIsActive(results.getBoolean("active"));
+            }
             return a;
         }
         catch (SQLException e){
@@ -264,16 +266,140 @@ public class Solution {
     }
 
     public static ReturnValue deleteAthlete(Athlete athlete) {
+            Connection connection = DBConnector.getConnection();
+            PreparedStatement pstmt = null;
+            int tmp = 0;
+            try{
+            pstmt = connection.prepareStatement(
+                    "SELECT COUNT(*) " +
+                            "FROM Athlete \n" +
+                            "WHERE athlete_id = ?;");
+            pstmt.setInt(1, athlete.getId());
+            ResultSet results = pstmt.executeQuery();
+                while(results.next()) {
+                    tmp = results.getInt("COUNT");
+                }
+            pstmt = connection.prepareStatement(
+                    "DELETE FROM Athlete " +
+                            "WHERE athlete_id = ? ;");
+                pstmt.setInt(1, athlete.getId());
+                pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
+                return ERROR;
+        }
+        finally {
+            try {
+                pstmt.close();
+            }
+            catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            }
+            catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
+        if(tmp == 0){
+            return NOT_EXISTS;
+        }
         return OK;
     }
 
     public static ReturnValue addSport(Sport sport) {
+
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = connection.prepareStatement(
+                    "INSERT INTO Sport \n" +
+                            "VALUES "+
+                            "(?, ?, ?, ?);");
+            pstmt.setInt(1,sport.getId());
+            pstmt.setString(2,sport.getName());
+            pstmt.setString(3,sport.getCity());
+            pstmt.setInt(4,sport.getAthletesCount());
+            pstmt.execute();
+        } catch (SQLException e) {
+            if(Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue() ||
+                    Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.NOT_NULL_VIOLATION.getValue()){
+                return BAD_PARAMS;
+            }
+            if(Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.UNIQUE_VIOLATION.getValue()){
+                return  ALREADY_EXISTS;
+            }
+            return ERROR;
+        }
+
         return OK;
     }
 
-    public static Sport getSport(Integer sportId) { return Sport.badSport(); }
+    public static Sport getSport(Integer sportId) {
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT sport_id, sport_name, city, Athlete_count " +
+                            "FROM Sport \n" +
+                            "WHERE sport_id = ?;");
+            pstmt.setInt(1, sportId);
+            ResultSet results = pstmt.executeQuery();
+            Sport a = Sport.badSport();
+            while(results.next()) {
+                a.setId(results.getInt("sport_id"));
+                a.setName(results.getString("sport_name"));
+                a.setCity(results.getString("city"));
+                a.setAthletesCount(results.getInt("athlete_count"));
+            }
+            return a;
+        }
+        catch (SQLException e){
+            return Sport.badSport();
+        }
+    }
 
     public static ReturnValue deleteSport(Sport sport) {
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        int tmp = 0;
+        try{
+            pstmt = connection.prepareStatement(
+                    "SELECT COUNT(*) " +
+                            "FROM Athlete \n" +
+                            "WHERE athlete_id = ?;");
+            pstmt.setInt(1, sport.getId());
+            ResultSet results = pstmt.executeQuery();
+            while(results.next()) {
+                tmp = results.getInt("COUNT");
+            }
+            pstmt = connection.prepareStatement(
+                    "DELETE FROM Athlete " +
+                            "WHERE athlete_id = ? ;");
+            pstmt.setInt(1, sport.getId());
+            pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
+            return ERROR;
+        }
+        finally {
+            try {
+                pstmt.close();
+            }
+            catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            }
+            catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
+        if(tmp == 0){
+            return NOT_EXISTS;
+        }
         return OK;
     }
 
