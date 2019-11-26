@@ -95,6 +95,21 @@ public class Solution {
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
+        }
+
+        try {
+
+            /*=================Medals View=============================== */
+            pstmt = connection.prepareStatement("CREATE View Medals as" +
+                    "SELECT athlete_id," +
+                            "COUNT(case when place=1 then 1 else 0 end) gold," +
+                            "COUNT(case when place=2 then 1 else 0 end) silver," +
+                            "COUNT(case when place=3 then 1 else 0 end) bronze" +
+                            "FROM Goes_to" +
+                            "GROUP BY athlete_id");
+            pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
         } finally {
             try {
                 pstmt.close();
@@ -161,7 +176,7 @@ public class Solution {
     public static void dropTables() {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        /*=================== Clear Goes_to ====================*/
+        /*=================== Drop Goes_to ====================*/
         try {
             pstmt = connection.prepareStatement(
                     "DROP TABLE Goes_to ;");
@@ -169,7 +184,7 @@ public class Solution {
         } catch (SQLException e) {
             //e.printStackTrace()();
         }
-        /*=================== Clear Friends ====================*/
+        /*=================== Drop Friends ====================*/
         try {
             pstmt = connection.prepareStatement(
                     "DROP TABLE Friends ;");
@@ -177,7 +192,7 @@ public class Solution {
         } catch (SQLException e) {
             //e.printStackTrace()();
         }
-        /*=================== Clear Sport ====================*/
+        /*=================== Drop Sport ====================*/
         try {
             pstmt = connection.prepareStatement(
                     "DROP TABLE Sport ;");
@@ -185,10 +200,18 @@ public class Solution {
         } catch (SQLException e) {
             //e.printStackTrace()();
         }
-        /*=================== Clear Athlete ====================*/
+        /*=================== Drop Athlete ====================*/
         try {
             pstmt = connection.prepareStatement(
                     "DROP TABLE Athlete ;");
+            pstmt.execute();
+        } catch (SQLException e) {
+            //e.printStackTrace()();
+        }
+        /*=================== Drop Medals ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP VIEW Medals ;");
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
@@ -770,7 +793,7 @@ public class Solution {
                             "WHERE country = ? AND place IS NOT NULL");
             pstmt.setString(1, country);
             ResultSet results = pstmt.executeQuery();
-            while (results.next()) {
+            if (results.next()) {
                 number_of_medals = results.getInt("COUNT");
             }
         } catch (SQLException e) {
@@ -790,7 +813,7 @@ public class Solution {
                             "WHERE sport_id = ?");
             pstmt.setInt(1, sportId);
             ResultSet results = pstmt.executeQuery();
-            while (results.next()) {
+            if (results.next()) {
                 income = results.getInt("SUM");
             }
         } catch (SQLException e) {
@@ -814,7 +837,7 @@ public class Solution {
                             "LIMIT 1");
             ResultSet results = pstmt.executeQuery();
             best_country = "";
-            while (results.next()) {
+            if (results.next()) {
                 best_country = results.getString("country");
             }
         } catch (SQLException e) {
@@ -837,7 +860,7 @@ public class Solution {
                             "LIMIT 1");
             ResultSet results = pstmt.executeQuery();
             popular_city = "";
-            while (results.next()) {
+            if (results.next()) {
                 popular_city = results.getString("city");
             }
         } catch (SQLException e) {
@@ -847,11 +870,50 @@ public class Solution {
     }
 
     public static ArrayList<Integer> getAthleteMedals(Integer athleteId) {
-        return new ArrayList<>();
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        ArrayList<Integer> athlete_medals= new ArrayList<Integer>(3);
+        athlete_medals.set(0, 0);
+        athlete_medals.set(1, 0);
+        athlete_medals.set(2, 0);
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT gold, silver, bronze" +
+                            "FROM Medals" +
+                            "WHERE athlete_id = ?");
+            pstmt.setInt(1, athleteId);
+            ResultSet results = pstmt.executeQuery();
+            if (results.next()) {
+                athlete_medals.set(0, results.getInt("gold"));
+                athlete_medals.set(1, results.getInt("silver"));
+                athlete_medals.set(2, results.getInt("bronze"));
+            }
+        } catch (SQLException e) {
+            return athlete_medals;
+        }
+        return athlete_medals;
     }
 
     public static ArrayList<Integer> getMostRatedAthletes() {
-        return new ArrayList<>();
+        Connection connection = DBConnector.getConnection();
+        PreparedStatement pstmt = null;
+        ArrayList<Integer> most_rated_athletes= new ArrayList<Integer>();
+        int num_athletes = 0;
+        try {
+            pstmt = connection.prepareStatement(
+                    "SELECT athlete_id" +
+                            "FROM Medals" +
+                            "GROUP BY athlete_id" +
+                            "ORDER BY SUM(3*gold + 2*silver + 1*bronze) DESC, athlete_id ASC");
+            ResultSet results = pstmt.executeQuery();
+            while (results.next() && num_athletes<10) {
+                most_rated_athletes.add(results.getInt("athlete_id"));
+                num_athletes += 1;
+            }
+        } catch (SQLException e) {
+            return most_rated_athletes;
+        }
+        return most_rated_athletes;
     }
 
     public static ArrayList<Integer> getCloseAthletes(Integer athleteId) {
