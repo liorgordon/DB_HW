@@ -498,7 +498,7 @@ public class Solution {
         PreparedStatement pstmt = null;
         try {
             // check if athlete doesn't participate/observe this sport
-            pstmt = connection.prepareStatement("SELECT * FROM Goes_to" +
+            pstmt = connection.prepareStatement("SELECT sport_id FROM Goes_to " +
                     "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
@@ -509,16 +509,16 @@ public class Solution {
 
             // if athlete is active - update athletes’ counter
             if (a.getIsActive()) {
-                pstmt = connection.prepareStatement("UPDATE Sport" +
-                        "SET athlete_count = athlete_count - 1" +
-                        "WHERE sport_id=?");
+                pstmt = connection.prepareStatement("UPDATE Sport " +
+                        "SET athlete_count = athlete_count - 1 " +
+                        "WHERE sport_id=? ;");
                 pstmt.setInt(1, sportId);
                 pstmt.execute();
             }
 
             // update the Goes_to table
-            pstmt = connection.prepareStatement("DELETE FROM Goes_to" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("DELETE FROM Goes_to " +
+                    "WHERE sport_id=? AND athlete_id=? ;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             pstmt.execute();
@@ -543,7 +543,7 @@ public class Solution {
     public static ReturnValue confirmStanding(Integer sportId, Integer athleteId, Integer place) {
         Athlete a = getAthleteProfile(athleteId);
         Sport s = getSport(sportId);
-        if (a.getId() == -1 || s.getId() == -1) {
+        if (a.getId() == -1 || s.getId() == -1 || a.getIsActive() == false) {
             return NOT_EXISTS;
         }
 
@@ -551,8 +551,8 @@ public class Solution {
         PreparedStatement pstmt = null;
         try {
             // check if athlete doesn't participate/observe this sport
-            pstmt = connection.prepareStatement("SELECT * FROM Goes_to" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("SELECT fee FROM Goes_to " +
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
@@ -561,9 +561,9 @@ public class Solution {
             }
 
             // update athletes place in sport
-            pstmt = connection.prepareStatement("UPDATE Goes_to" +
-                    "SET place = ?" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("UPDATE Goes_to " +
+                    "SET place = ? " +
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, place);
             pstmt.setInt(2, sportId);
             pstmt.setInt(3, athleteId);
@@ -593,6 +593,7 @@ public class Solution {
     public static ReturnValue athleteDisqualified(Integer sportId, Integer athleteId) {
         Athlete a = getAthleteProfile(athleteId);
         Sport s = getSport(sportId);
+        ReturnValue ret = OK;
         if (a.getId() == -1 || s.getId() == -1) {
             return NOT_EXISTS;
         }
@@ -601,19 +602,25 @@ public class Solution {
         PreparedStatement pstmt = null;
         try {
             // check if athlete doesn't participate/observe this sport
-            pstmt = connection.prepareStatement("SELECT * FROM Goes_to" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("SELECT place FROM Goes_to " +
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
-            if (!results.next()) {
-                return NOT_EXISTS;
+            if (!results.next()){
+                ret = NOT_EXISTS;
+            }
+            else{
+                int iVal = results.getInt("place");
+                if (results.wasNull()) {
+                    ret = NOT_EXISTS;
+                }
             }
 
             // disqualifying athlete - nullifying their medal
-            pstmt = connection.prepareStatement("UPDATE Goes_to" +
-                    "SET place = NULL" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("UPDATE Goes_to " +
+                    "SET place = NULL " +
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             pstmt.execute();
@@ -632,7 +639,7 @@ public class Solution {
                 //e.printStackTrace()();
             }
         }
-        return OK;
+        return ret;
     }
 
     public static ReturnValue makeFriends(Integer athleteId1, Integer athleteId2) {
