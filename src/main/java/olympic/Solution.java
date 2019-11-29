@@ -100,11 +100,11 @@ public class Solution {
         try {
 
             /*=================Medals View=============================== */
-            pstmt = connection.prepareStatement("CREATE View Medals as" +
+            pstmt = connection.prepareStatement("CREATE View Medals(athlete_id, gold, silver, bronze) as" +
                     "SELECT athlete_id," +
-                    "COUNT(place=1 OR NULL) gold," +
-                    "COUNT(place=2 OR NULL) silver," +
-                    "COUNT(place=3 OR NULL) bronze" +
+                    "COUNT(CASE place when 1 then 1 else null end)," +
+                    "COUNT(CASE place when 2 then 1 else null end)," +
+                    "COUNT(CASE place when 3 then 1 else null end)" +
                     "FROM Goes_to" +
                     "GROUP BY athlete_id");
             pstmt.execute();
@@ -115,10 +115,10 @@ public class Solution {
         try {
 
             /*=================ShareSport View=============================== */
-            pstmt = connection.prepareStatement("CREATE View ShareSport as" +
-                    "SELECT a1.athlete_id as athlete1_id, a2.athlete_id athlete2_id, s.sport_id," +
-                    "(SELECT count(*) FROM Goes_to g1 WHERE g1.athlete_id = a1.athlete_id and s.sport_id = g1.sport_id) as athlete1_took," +
-                    "(SELECT count(*) FROM Goes_to g2 WHERE g2.athlete_id = a2.athlete_id and s.sport_id = g2.sport_id) as athlete2_took" +
+            pstmt = connection.prepareStatement("CREATE View ShareSport(athlete1_id, athlete2_id, sport_id, athlete1_took, athlete2_took) as" +
+                    "SELECT a1.athlete_id  , a2.athlete_id , s.sport_id," +
+                    "(SELECT count(*) FROM Goes_to as g1 WHERE g1.athlete_id = a1.athlete_id and s.sport_id = g1.sport_id)," +
+                    "(SELECT count(*) FROM Goes_to as g2 WHERE g2.athlete_id = a2.athlete_id and s.sport_id = g2.sport_id)" +
                     "FROM Athlete a1, Athlete a2, Sports s");
             pstmt.execute();
         } catch (SQLException e) {
@@ -398,16 +398,16 @@ public class Solution {
         try {
             pstmt = connection.prepareStatement(
                     "SELECT COUNT(*) " +
-                            "FROM Athlete \n" +
-                            "WHERE athlete_id = ?;");
+                            "FROM Sport \n" +
+                            "WHERE sport_id = ?;");
             pstmt.setInt(1, sport.getId());
             ResultSet results = pstmt.executeQuery();
             while (results.next()) {
                 tmp = results.getInt("COUNT");
             }
             pstmt = connection.prepareStatement(
-                    "DELETE FROM Athlete " +
-                            "WHERE athlete_id = ? ;");
+                    "DELETE FROM Sport " +
+                            "WHERE sport_id = ? ;");
             pstmt.setInt(1, sport.getId());
             pstmt.execute();
         } catch (SQLException e) {
@@ -442,8 +442,8 @@ public class Solution {
         PreparedStatement pstmt = null;
         try {
             // check if athlete already joined the sport
-            pstmt = connection.prepareStatement("SELECT * FROM Goes_to" +
-                    "WHERE sport_id=? AND athlete_id=?");
+            pstmt = connection.prepareStatement("SELECT * FROM Goes_to " +
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
@@ -455,16 +455,16 @@ public class Solution {
             int fee = 100;
             if (a.getIsActive()) {
                 fee = 0;
-                pstmt = connection.prepareStatement("UPDATE Sport" +
+                pstmt = connection.prepareStatement("UPDATE Sport " +
                         "SET athlete_count = athlete_count + 1" +
-                        "WHERE sport_id=?");
+                        "WHERE sport_id=? ;");
                 pstmt.setInt(1, sportId);
                 pstmt.execute();
             }
 
             // update the Goes_to table
-            pstmt = connection.prepareStatement("INSERT INTO Goes_to(Sport_ID, Athlete_ID, Fee)" +
-                    "VALUES (?,?,?)");
+            pstmt = connection.prepareStatement("INSERT INTO Goes_to(Sport_ID, Athlete_ID, Fee) " +
+                    "VALUES (?,?,?);");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             pstmt.setInt(3, fee);
@@ -499,7 +499,7 @@ public class Solution {
         try {
             // check if athlete doesn't participate/observe this sport
             pstmt = connection.prepareStatement("SELECT * FROM Goes_to" +
-                    "WHERE sport_id=? AND athlete_id=?");
+                    "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
@@ -541,9 +541,6 @@ public class Solution {
     }
 
     public static ReturnValue confirmStanding(Integer sportId, Integer athleteId, Integer place) {
-        if (place < 1 || place > 3) {
-            return BAD_PARAMS;
-        }
         Athlete a = getAthleteProfile(athleteId);
         Sport s = getSport(sportId);
         if (a.getId() == -1 || s.getId() == -1) {
@@ -572,6 +569,10 @@ public class Solution {
             pstmt.setInt(3, athleteId);
             pstmt.execute();
         } catch (SQLException e) {
+//            getting a check violation at this point means the place is invalid
+            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue()) {
+                return BAD_PARAMS;
+            }
             //e.printStackTrace()();
             return ERROR;
         } finally {
@@ -640,16 +641,13 @@ public class Solution {
         if (a1.getId() == -1 || a2.getId() == -1) {
             return NOT_EXISTS;
         }
-        if (a1.getId() == a2.getId()) {
-            return BAD_PARAMS;
-        }
 
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
             // check if athletes are already friends
-            pstmt = connection.prepareStatement("SELECT * FROM Friends" +
-                    "WHERE (Athlete1_ID=? AND Athlete2_ID=?) OR (Athlete1_ID=? AND Athlete2_ID=?)");
+            pstmt = connection.prepareStatement("SELECT * FROM Friends " +
+                    "WHERE (Athlete1_ID=? AND Athlete2_ID=?) OR (Athlete1_ID=? AND Athlete2_ID=?);");
             pstmt.setInt(1, athleteId1);
             pstmt.setInt(2, athleteId2);
             pstmt.setInt(3, athleteId2);
@@ -660,15 +658,19 @@ public class Solution {
             }
 
             // create friendship
-            pstmt = connection.prepareStatement("INSERT INTO Friends" +
-                    "VALUES (?,?), (?,?)");
+            pstmt = connection.prepareStatement("INSERT INTO Friends " +
+                    "VALUES (?,?), (?,?);");
             pstmt.setInt(1, athleteId1);
             pstmt.setInt(2, athleteId2);
-            pstmt.setInt(1, athleteId2);
-            pstmt.setInt(2, athleteId1);
+            pstmt.setInt(3, athleteId2);
+            pstmt.setInt(4, athleteId1);
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
+//            getting a check violation at this point means the ids are the same
+            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue()) {
+                return BAD_PARAMS;
+            }
             return ERROR;
         } finally {
             try {
@@ -736,7 +738,8 @@ public class Solution {
     public static ReturnValue changePayment(Integer athleteId, Integer sportId, Integer payment) {
         Athlete a = getAthleteProfile(athleteId);
         Sport s = getSport(sportId);
-        if (a.getId() == -1 || s.getId() == -1) {
+//        if an athlete is considered active then he won't observe any sports
+        if (a.getId() == -1 || s.getId() == -1 || a.getIsActive()) {
             return NOT_EXISTS;
         }
 
@@ -762,6 +765,10 @@ public class Solution {
             pstmt.setInt(3, athleteId);
             pstmt.execute();
         } catch (SQLException e) {
+//            getting a check violation at this point mean the fee is negative
+            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue()) {
+                return BAD_PARAMS;
+            }
             //e.printStackTrace()();
             return ERROR;
         } finally {
@@ -782,6 +789,7 @@ public class Solution {
     public static Boolean isAthletePopular(Integer athleteId) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
+        boolean ret = false;
         try {
             pstmt = connection.prepareStatement(
                     "SELECT sport_id" +
@@ -794,12 +802,25 @@ public class Solution {
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
             if (results.next()) {
-                return Boolean.FALSE;
+                ret = Boolean.FALSE;
             }
-            return Boolean.TRUE;
+            ret = Boolean.TRUE;
         } catch (SQLException e) {
-            return Boolean.FALSE;
+            ret = Boolean.FALSE;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
+        return ret;
     }
 
     public static Integer getTotalNumberOfMedalsFromCountry(String country) {
@@ -808,9 +829,9 @@ public class Solution {
         int number_of_medals = 0;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT count(*)" +
-                            "FROM Goes_to" +
-                            "LEFT JOIN Athlete ON Goes_to.athlete_id = Athlete.athlete_id" +
+                    "SELECT COUNT(*)" +
+                            "FROM Athlete" +
+                            "LEFT JOIN Goes_to ON Goes_to.athlete_id = Athlete.athlete_id" +
                             "WHERE country = ? AND place IS NOT NULL");
             pstmt.setString(1, country);
             ResultSet results = pstmt.executeQuery();
@@ -819,6 +840,18 @@ public class Solution {
             }
         } catch (SQLException e) {
             return number_of_medals;
+        }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
         }
         return number_of_medals;
     }
@@ -840,6 +873,18 @@ public class Solution {
         } catch (SQLException e) {
             return income;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
         return income;
     }
 
@@ -849,12 +894,12 @@ public class Solution {
         String best_country = null;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT country" +
-                            "FROM Goes_to" +
-                            "LEFT JOIN Athlete ON Goes_to.athlete_id = Athlete.athlete_id" +
+                    "SELECT COUNT(athlete_id), country" +
+                            "FROM Athlete" +
+                            "LEFT JOIN Goes_to ON Goes_to.athlete_id = Athlete.athlete_id" +
                             "WHERE place IS NOT NULL" +
                             "GROUP BY country" +
-                            "ORDER BY count(*) DESC, country ASC" +
+                            "ORDER BY count(athlete_id) DESC, country ASC" +
                             "LIMIT 1");
             ResultSet results = pstmt.executeQuery();
             best_country = "";
@@ -863,6 +908,18 @@ public class Solution {
             }
         } catch (SQLException e) {
             return best_country;
+        }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
         }
         return best_country;
     }
@@ -874,18 +931,33 @@ public class Solution {
         try {
             pstmt = connection.prepareStatement(
                     "SELECT city" +
-                            "FROM Goes_to" +
-                            "LEFT JOIN Sport ON Goes_to.Sport_id = Sport.Sport_id" +
-                            "GROUP BY city" +
-                            "ORDER BY COUNT(*)/COUNT(distinct Sport_id) DESC, city DESC" +
-                            "LIMIT 1");
+                            "FROM Sport" +
+                            "LEFT JOIN Goes_to ON Goes_to.Sport_id = Sport.Sport_id" +
+                            "WHERE fee=0" +
+                            "GROUP BY city HAVING COUNT(distinct Sport_id)>0" +
+                            "ORDER BY COUNT(*)*1.0/COUNT(distinct Sport_id) DESC, city DESC" );
             ResultSet results = pstmt.executeQuery();
-            popular_city = "";
+
             if (results.next()) {
                 popular_city = results.getString("city");
             }
+            else{
+                popular_city = "";
+            }
         } catch (SQLException e) {
             return popular_city;
+        }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
         }
         return popular_city;
     }
@@ -912,6 +984,18 @@ public class Solution {
         } catch (SQLException e) {
             return athlete_medals;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
         return athlete_medals;
     }
 
@@ -934,22 +1018,39 @@ public class Solution {
         } catch (SQLException e) {
             return most_rated_athletes;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
         return most_rated_athletes;
     }
 
     public static ArrayList<Integer> getCloseAthletes(Integer athleteId) {
+        ArrayList<Integer> close_athletes= new ArrayList<Integer>();
+        Athlete a = getAthleteProfile(athleteId);
+        if(a.getId() == -1){
+            return close_athletes;
+        }
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        ArrayList<Integer> close_athletes= new ArrayList<Integer>();
         int num_athletes = 0;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT athlete_id FROM" +
+                    "SELECT athlete1_id FROM" +
                             "FROM ShareSport" +
                             "WHERE athlete2_id = ?" +
                             "GROUP BY athlete1_id" +
-                            "HAVING SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5" +
-                            "ORDER BY SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) DESC, athlete_id ASC");
+                            "HAVING CASE SUM(athlete2_take) <> 0 THEN WHEN SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5" +
+                            "THEN athlete1_id > 0"+
+                            "ORDER BY athlete_id ASC");
             pstmt.setInt(1, athleteId);
             ResultSet results = pstmt.executeQuery();
             while (results.next() && num_athletes<10) {
@@ -958,6 +1059,18 @@ public class Solution {
             }
         } catch (SQLException e) {
             return close_athletes;
+        }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
         }
         return close_athletes;
     }
@@ -976,7 +1089,8 @@ public class Solution {
                                 "FROM ShareSport s" +
                                 "WHERE athlete2_id = ?" +
                                 "GROUP BY athlete1_id" +
-                                "HAVING SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5)" +
+                            "HAVING CASE SUM(athlete2_take) <> 0 THEN WHEN SUM(athlete1_take * athlete2_take)/SUM(athlete2_take) >= 0.5" +
+                            "THEN athlete1_id > 0)"+
                             "GROUP BY sport_id" +
                             "ORDER BY count(*) DESC, athlete_id ASC");
             pstmt.setInt(1, athleteId);
