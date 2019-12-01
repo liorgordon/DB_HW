@@ -122,6 +122,7 @@ public class BasicAPITests extends AbstractTest {
     static void BuildDB(){
         ReturnValue res;
         Athlete a = new Athlete();
+//      ========================= Athlete =================================
         a.setId(1);
         a.setName("Neymar");
         a.setCountry("Brazil");
@@ -133,7 +134,7 @@ public class BasicAPITests extends AbstractTest {
         a.setId(2);
         a.setName("Artur");
         a.setCountry("Brazil");
-        a.setIsActive(false);
+        a.setIsActive(true);
         ret = Solution.addAthlete(a);
         assertEquals(OK, ret);
 
@@ -144,6 +145,27 @@ public class BasicAPITests extends AbstractTest {
         ret = Solution.addAthlete(a);
         assertEquals(OK, ret);
 
+        a.setId(4);
+        a.setName("Artur");
+        a.setCountry("Brazil");
+        a.setIsActive(false);
+        ret = Solution.addAthlete(a);
+        assertEquals(OK, ret);
+
+        a.setId(5);
+        a.setName("Artur");
+        a.setCountry("England");
+        a.setIsActive(true);
+        ret = Solution.addAthlete(a);
+        assertEquals(OK, ret);
+
+        a.setId(6);
+        a.setName("Artur");
+        a.setCountry("England");
+        a.setIsActive(true);
+        ret = Solution.addAthlete(a);
+        assertEquals(OK, ret);
+// ====== Sport =============================================================
         Sport s = new Sport();
         s.setId(1);
         s.setName("Basketball");
@@ -153,6 +175,13 @@ public class BasicAPITests extends AbstractTest {
         assertEquals(OK, res);
 
         s.setId(2);
+        s.setName("Soccer");
+        s.setCity("New-York");
+        s.setAthletesCount(0);
+        res = Solution.addSport(s);
+        assertEquals(OK, res);
+
+        s.setId(3);
         s.setName("Soccer");
         s.setCity("New-York");
         s.setAthletesCount(0);
@@ -193,6 +222,233 @@ public class BasicAPITests extends AbstractTest {
         assertEquals(NOT_EXISTS, res);
         res = Solution.athleteDisqualified(1, 1);
         assertEquals(OK, res);
+    }
+
+    @Test
+    public void ChangePaymentTest(){
+        BuildDB();
+        ReturnValue res;
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+
+//        1 is participating in the sport not observing
+        res = Solution.changePayment(1, 1, 100);
+        assertEquals(NOT_EXISTS, res);
+
+//        no such sport
+        res = Solution.changePayment(1, -2, 100);
+        assertEquals(NOT_EXISTS, res);
+
+//                no such athlete
+        res = Solution.changePayment(10, 2, 100);
+        assertEquals(NOT_EXISTS, res);
+
+//        the athlete does not take this sport at all
+        res = Solution.changePayment(2, 1, 100);
+        assertEquals(NOT_EXISTS, res);
+
+//        invalid payment
+        res = Solution.changePayment(3, 1, -100);
+        assertEquals(BAD_PARAMS, res);
+
+        res = Solution.changePayment(3, 1, 1000);
+        assertEquals(OK, res);
+
+    }
+
+    @Test
+    public void IsPopularTest(){
+        BuildDB();
+        ReturnValue res;
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+
+
+        res = Solution.makeFriends(1, 3);
+        assertEquals(OK, res);
+
+        Boolean b = true;
+// his only friend is observing while he is participating
+        b = Solution.isAthletePopular(1);
+        assertEquals(true, b);
+
+        res = Solution.makeFriends(1, 2);
+        assertEquals(OK, res);
+
+//        has a friend that like has no connection to sport id 1 -> he's still popular then
+        b = Solution.isAthletePopular(1);
+        assertEquals(true, b);
+
+        res = Solution.athleteJoinSport(1, 2);
+        assertEquals(OK, res);
+
+        b = Solution.isAthletePopular(1);
+        assertEquals(true, b);
+
+        res = Solution.athleteJoinSport(2, 2);
+        assertEquals(OK, res);
+
+        b = Solution.isAthletePopular(1);
+        assertEquals(false, b);
+
+        res = Solution.removeFriendship(1,2);
+        assertEquals(OK, res);
+
+        b = Solution.isAthletePopular(1);
+        assertEquals(true, b);
+
+    }
+
+    @Test
+    public void getTotalNumberOfMedalsFromCountryTest(){
+        BuildDB();
+        int medals =0;
+        ReturnValue res;
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(2, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(0, medals);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Barzilai");
+        assertEquals(0, medals);
+
+        res = Solution.confirmStanding(1, 1, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(1, medals);
+
+        res = Solution.confirmStanding(2, 1, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(2, medals);
+
+        res = Solution.athleteDisqualified(2, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(1, medals);
+
+        res = Solution.athleteJoinSport(1, 2);
+        assertEquals(OK, res);
+
+        res = Solution.confirmStanding(1, 2, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(2, medals);
+
+        res = Solution.athleteJoinSport(1, 5);
+        assertEquals(OK, res);
+
+        res = Solution.confirmStanding(1, 5, 1);
+        assertEquals(OK, res);
+
+        medals = Solution.getTotalNumberOfMedalsFromCountry("Brazil");
+        assertEquals(2, medals);
+    }
+
+    @Test
+    public void getIncomeFromSportTest(){
+        BuildDB();
+        int inc =0;
+        ReturnValue res;
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 4);
+        assertEquals(OK, res);
+
+        inc = Solution.getIncomeFromSport(1);
+        assertEquals(200, inc);
+
+        inc = Solution.getIncomeFromSport(2);
+        assertEquals(0, inc);
+
+        inc = Solution.getIncomeFromSport(191);
+        assertEquals(0, inc);
+
+        res = Solution.changePayment(3, 1, 17);
+        assertEquals(OK, res);
+
+        inc = Solution.getIncomeFromSport(1);
+        assertEquals(117, inc);
+
+        res = Solution.athleteLeftSport(1, 3);
+        assertEquals(OK, res);
+
+        inc = Solution.getIncomeFromSport(1);
+        assertEquals(100, inc);
+    }
+
+    @Test
+    public void getBestCountryTest(){
+        ReturnValue res;
+        String s;
+        s= Solution.getBestCountry();
+        assertEquals("", s);
+
+        BuildDB();
+        s= Solution.getBestCountry();
+        assertEquals("", s);
+
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(1, 5);
+        assertEquals(OK, res);
+
+        res = Solution.athleteJoinSport(2, 6);
+        assertEquals(OK, res);
+
+        res = Solution.confirmStanding(1, 5, 1);
+        assertEquals(OK, res);
+
+        s= Solution.getBestCountry();
+        assertEquals("England", s);
+
+        res = Solution.confirmStanding(1, 1, 1);
+        assertEquals(OK, res);
+
+        s= Solution.getBestCountry();
+        assertEquals("Brazil", s);
+
+        res = Solution.athleteDisqualified(1, 1);
+        assertEquals(OK, res);
+
+        s= Solution.getBestCountry();
+        assertEquals("England", s);
+
+        res = Solution.confirmStanding(1, 1, 1);
+        assertEquals(OK, res);
+        s= Solution.getBestCountry();
+        assertEquals("Brazil", s);
+
+        res = Solution.confirmStanding(2, 6, 1);
+        assertEquals(OK, res);
+        s= Solution.getBestCountry();
+        assertEquals("England", s);
+
     }
 
 }
