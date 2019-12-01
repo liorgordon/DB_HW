@@ -176,14 +176,14 @@ public class BasicAPITests extends AbstractTest {
 
         s.setId(2);
         s.setName("Soccer");
-        s.setCity("New-York");
+        s.setCity("New York");
         s.setAthletesCount(0);
         res = Solution.addSport(s);
         assertEquals(OK, res);
 
         s.setId(3);
         s.setName("Soccer");
-        s.setCity("New-York");
+        s.setCity("New York");
         s.setAthletesCount(0);
         res = Solution.addSport(s);
         assertEquals(OK, res);
@@ -448,6 +448,58 @@ public class BasicAPITests extends AbstractTest {
         assertEquals(OK, res);
         s= Solution.getBestCountry();
         assertEquals("England", s);
+
+        res = Solution.athleteLeftSport(2, 6);
+        assertEquals(OK, res);
+        s= Solution.getBestCountry();
+        assertEquals("Brazil", s);
+    }
+
+    @Test
+    public void getMostPopularCityTest(){
+        ReturnValue res;
+        String s;
+        s = Solution.getMostPopularCity();
+        assertEquals(s, "");
+        BuildDB();
+        s = Solution.getMostPopularCity();
+        assertEquals("Tel Aviv", s);
+
+        res = Solution.athleteJoinSport(2, 3);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("Tel Aviv", s);
+
+        res = Solution.athleteJoinSport(2, 1);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("New York", s);
+
+        res = Solution.athleteJoinSport(2, 2);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("New York", s);
+
+        res = Solution.athleteJoinSport(3, 5);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("New York", s);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("New York", s);
+
+        res = Solution.athleteJoinSport(1, 2);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("Tel Aviv", s);
+
+        res = Solution.athleteLeftSport(1, 2);
+        assertEquals(OK, res);
+        s = Solution.getMostPopularCity();
+        assertEquals("New York", s);
+
 
     }
 

@@ -912,12 +912,12 @@ public class Solution {
         String best_country = null;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT COUNT(athlete_id), country " +
+                    "SELECT COUNT(a.athlete_id), a.country " +
                             "FROM Athlete as a " +
                             "LEFT JOIN Goes_to as g ON a.athlete_id = g.athlete_id " +
                             "WHERE place IS NOT NULL " +
                             "GROUP BY country " +
-                            "ORDER BY count(athlete_id) DESC, country ASC; ");
+                            "ORDER BY count(a.athlete_id) DESC, a.country ASC; ");
             ResultSet results = pstmt.executeQuery();
             best_country = "";
             if (results.next()) {
@@ -947,12 +947,11 @@ public class Solution {
         String popular_city = null;
         try {
             pstmt = connection.prepareStatement(
-                    "SELECT city" +
-                            "FROM Sport" +
-                            "LEFT JOIN Goes_to ON Goes_to.Sport_id = Sport.Sport_id" +
-                            "WHERE fee=0" +
-                            "GROUP BY city HAVING COUNT(distinct Sport_id)>0" +
-                            "ORDER BY COUNT(*)*1.0/COUNT(distinct Sport_id) DESC, city DESC" );
+                    "SELECT city " +
+                            "FROM Sport as s " +
+                            "LEFT JOIN Goes_to as g ON g.Sport_id = s.Sport_id " +
+                            "GROUP BY city HAVING COUNT(distinct s.Sport_id)>0 " +
+                            "ORDER BY SUM(athlete_count)*1.0/COUNT(distinct s.Sport_id) DESC, s.city desc;" );
             ResultSet results = pstmt.executeQuery();
 
             if (results.next()) {
