@@ -6,6 +6,7 @@ import olympic.business.*;
 import static org.junit.Assert.assertEquals;
 import static olympic.business.ReturnValue.*;
 
+import java.util.ArrayList;
 
 public class BasicAPITests extends AbstractTest {
     @Test
@@ -502,7 +503,265 @@ public class BasicAPITests extends AbstractTest {
 
 
     }
+    @Test
+    public void getAthleteMedalsTest(){
+        ReturnValue res;
+        ArrayList<Integer> athlete_medals_res;
+        ArrayList<Integer> athlete_medals_exp = new ArrayList<Integer>();
+        athlete_medals_exp.add(0);
+        athlete_medals_exp.add(0);
+        athlete_medals_exp.add(0);
 
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        BuildDB();
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(1, 1, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        athlete_medals_exp.set(0,1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 2);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(2, 2, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getAthleteMedals(2);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 1);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(2, 1, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        athlete_medals_exp.set(0,2);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.confirmStanding(2, 1, 2);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getAthleteMedals(1);
+        athlete_medals_exp.set(0,1);
+        athlete_medals_exp.set(1,1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+    }
+    @Test
+    public void getMostRatedAthletesTest(){
+        ReturnValue res;
+        ArrayList<Integer> athlete_medals_res;
+        ArrayList<Integer> athlete_medals_exp = new ArrayList<Integer>();
+
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        BuildDB();
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        athlete_medals_exp.add(1);
+        athlete_medals_exp.add(2);
+        athlete_medals_exp.add(3);
+        athlete_medals_exp.add(4);
+        athlete_medals_exp.add(5);
+        athlete_medals_exp.add(6);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 2);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(1, 2, 3);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        athlete_medals_exp.set(0,2);
+        athlete_medals_exp.set(1,1);
+        athlete_medals_exp.set(2,3);
+        athlete_medals_exp.set(3,4);
+        athlete_medals_exp.set(4,5);
+        athlete_medals_exp.set(5,6);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 5);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(2, 5, 2);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        athlete_medals_exp.set(0,5);
+        athlete_medals_exp.set(1,2);
+        athlete_medals_exp.set(2,1);
+        athlete_medals_exp.set(3,3);
+        athlete_medals_exp.set(4,4);
+        athlete_medals_exp.set(5,6);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 6);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(2, 6, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        athlete_medals_exp.set(0,6);
+        athlete_medals_exp.set(1,5);
+        athlete_medals_exp.set(2,2);
+        athlete_medals_exp.set(3,1);
+        athlete_medals_exp.set(4,3);
+        athlete_medals_exp.set(5,4);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 2);
+        assertEquals(OK, res);
+        res = Solution.confirmStanding(2, 2, 2);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getMostRatedAthletes();
+        athlete_medals_exp.set(0,2);
+        athlete_medals_exp.set(1,6);
+        athlete_medals_exp.set(2,5);
+        athlete_medals_exp.set(3,1);
+        athlete_medals_exp.set(4,3);
+        athlete_medals_exp.set(5,4);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+    }
+
+    @Test
+    public void getCloseAthletesTest(){
+        ReturnValue res;
+        ArrayList<Integer> athlete_medals_res;
+        ArrayList<Integer> athlete_medals_exp = new ArrayList<Integer>();
+
+        athlete_medals_res = Solution.getCloseAthletes(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        BuildDB();
+        athlete_medals_res = Solution.getCloseAthletes(1);
+        athlete_medals_exp.add(2);
+        athlete_medals_exp.add(3);
+        athlete_medals_exp.add(4);
+        athlete_medals_exp.add(5);
+        athlete_medals_exp.add(6);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getCloseAthletes(3);
+        athlete_medals_exp.removeAll(athlete_medals_exp);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(1);
+        athlete_medals_exp.add(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getCloseAthletes(3);
+        athlete_medals_exp.set(0,1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+
+        res = Solution.athleteJoinSport(1, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(3);
+        athlete_medals_exp.add(5);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getCloseAthletes(1);
+        athlete_medals_exp.set(0,3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(5);
+        athlete_medals_exp.set(0,1);
+        athlete_medals_exp.set(1,3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(3, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(5);
+        athlete_medals_exp.removeAll(athlete_medals_exp);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 6);
+        assertEquals(OK, res);
+        res = Solution.athleteJoinSport(3, 6);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getCloseAthletes(5);
+        athlete_medals_exp.add(6);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getCloseAthletes(6);
+        athlete_medals_exp.set(0,1);
+        athlete_medals_exp.add(3);
+        athlete_medals_exp.add(5);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+    }
+
+
+    @Test
+    public void getSportsRecommendationTest(){
+        ReturnValue res;
+        ArrayList<Integer> athlete_medals_res;
+        ArrayList<Integer> athlete_medals_exp = new ArrayList<Integer>();
+
+        athlete_medals_res = Solution.getSportsRecommendation(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        BuildDB();
+        athlete_medals_res = Solution.getSportsRecommendation(1);
+        athlete_medals_exp.add(1);
+        athlete_medals_exp.add(2);
+        athlete_medals_exp.add(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 3);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getSportsRecommendation(3);
+        athlete_medals_exp.removeAll(athlete_medals_exp);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 1);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(1);
+        athlete_medals_exp.add(2);
+        athlete_medals_exp.add(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getSportsRecommendation(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+
+        res = Solution.athleteJoinSport(1, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getSportsRecommendation(1);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+        athlete_medals_res = Solution.getSportsRecommendation(5);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(2, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(5);
+        athlete_medals_exp.removeAll(athlete_medals_exp);
+        athlete_medals_exp.add(3);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(3, 5);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(5);
+        athlete_medals_exp.removeAll(athlete_medals_exp);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+        res = Solution.athleteJoinSport(1, 6);
+        assertEquals(OK, res);
+        res = Solution.athleteJoinSport(3, 6);
+        assertEquals(OK, res);
+        athlete_medals_res = Solution.getSportsRecommendation(6);
+        athlete_medals_exp.add(2);
+        assertEquals(athlete_medals_exp, athlete_medals_res);
+
+    }
 }
 
 
