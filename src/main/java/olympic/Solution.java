@@ -1126,7 +1126,8 @@ public class Solution {
                             "(SELECT s.sport_id, g.athlete_id from Sport s LEFT JOIN Goes_to g ON s.sport_id=g.sport_id) sa\n" +
                             "WHERE sa.sport_id NOT IN (SELECT sport_id FROM Goes_to WHERE athlete_id = ?)\n" +
                             "GROUP BY sa.sport_id\n" +
-                            "ORDER BY COUNT(close_athlete_id = sa.athlete_id OR NULL) DESC, sa.sport_id ASC");
+                            "ORDER BY COUNT(close_athlete_id = sa.athlete_id OR NULL) DESC, sa.sport_id ASC\n" +
+                            "LIMIT 3");
             pstmt.setInt(1, athleteId);
             pstmt.setInt(2, athleteId);
             ResultSet results = pstmt.executeQuery();
