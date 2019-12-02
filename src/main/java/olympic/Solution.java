@@ -1113,7 +1113,6 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         ArrayList<Integer> sports_recommendation= new ArrayList<Integer>();
-        int num_sports = 0;
         try {
             pstmt = connection.prepareStatement(
                     "SELECT sa.sport_id\n" +
