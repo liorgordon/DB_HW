@@ -69,8 +69,8 @@ public class Solution {
                     "    Athlete_ID integer,\n" +
                     "    Fee integer,\n" +
                     "    Place integer,\n" +
-                    "    FOREIGN KEY (Sport_ID) REFERENCES Sport(Sport_ID),\n" +
-                    "    FOREIGN KEY (Athlete_ID) REFERENCES Athlete(Athlete_ID),\n" +
+                    "    FOREIGN KEY (Sport_ID) REFERENCES Sport(Sport_ID) ON DELETE CASCADE,\n" +
+                    "    FOREIGN KEY (Athlete_ID) REFERENCES Athlete(Athlete_ID) ON DELETE CASCADE,\n" +
                     "    CHECK (Place > 0),\n" +
                     "    CHECK (Place < 4),\n" +
                     "    CHECK (fee >= 0)\n" +
@@ -88,8 +88,8 @@ public class Solution {
                     "(\n" +
                     "    Athlete2_ID integer,\n" +
                     "    Athlete1_ID integer,\n" +
-                    "    FOREIGN KEY (Athlete1_ID) REFERENCES Athlete(Athlete_ID),\n" +
-                    "    FOREIGN KEY (Athlete2_ID) REFERENCES Athlete(Athlete_ID),\n" +
+                    "    FOREIGN KEY (Athlete1_ID) REFERENCES Athlete(Athlete_ID) ON DELETE CASCADE,\n" +
+                    "    FOREIGN KEY (Athlete2_ID) REFERENCES Athlete(Athlete_ID) ON DELETE CASCADE,\n" +
                     "    CHECK (Athlete1_ID <> Athlete2_ID)\n" +
                     ")");
             pstmt.execute();
@@ -193,45 +193,13 @@ public class Solution {
     public static void dropTables() {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        /*=================== Drop Goes_to ====================*/
-        try {
-            pstmt = connection.prepareStatement(
-                    "DROP TABLE Goes_to ;");
-            pstmt.execute();
-        } catch (SQLException e) {
-            //e.printStackTrace()();
-        }
-        /*=================== Drop Friends ====================*/
-        try {
-            pstmt = connection.prepareStatement(
-                    "DROP TABLE Friends ;");
-            pstmt.execute();
-        } catch (SQLException e) {
-            //e.printStackTrace()();
-        }
-        /*=================== Drop Sport ====================*/
-        try {
-            pstmt = connection.prepareStatement(
-                    "DROP TABLE Sport ;");
-            pstmt.execute();
-        } catch (SQLException e) {
-            //e.printStackTrace()();
-        }
-        /*=================== Drop Athlete ====================*/
-        try {
-            pstmt = connection.prepareStatement(
-                    "DROP TABLE Athlete ;");
-            pstmt.execute();
-        } catch (SQLException e) {
-            //e.printStackTrace()();
-        }
         /*=================== Drop Medals ====================*/
         try {
             pstmt = connection.prepareStatement(
                     "DROP VIEW Medals ;");
             pstmt.execute();
         } catch (SQLException e) {
-            //e.printStackTrace()();
+//            e.printStackTrace();
         }
         /*=================== Drop CloseAthlete ====================*/
         try {
@@ -239,7 +207,39 @@ public class Solution {
                     "DROP VIEW CloseAthlete ;");
             pstmt.execute();
         } catch (SQLException e) {
-            //e.printStackTrace()();
+            e.printStackTrace();
+        }
+        /*=================== Drop Goes_to ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP TABLE Goes_to;");
+            pstmt.execute();
+        } catch (SQLException e) {
+//            e.printStackTrace();
+        }
+        /*=================== Drop Friends ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP TABLE Friends;");
+            pstmt.execute();
+        } catch (SQLException e) {
+//            e.printStackTrace();
+        }
+        /*=================== Drop Sport ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP TABLE Sport ;");
+            pstmt.execute();
+        } catch (SQLException e) {
+//            e.printStackTrace();
+        }
+        /*=================== Drop Athlete ====================*/
+        try {
+            pstmt = connection.prepareStatement(
+                    "DROP TABLE Athlete ;");
+            pstmt.execute();
+        } catch (SQLException e) {
+//            e.printStackTrace();
         }finally {
             try {
                 pstmt.close();
