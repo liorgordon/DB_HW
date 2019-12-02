@@ -820,6 +820,11 @@ public class Solution {
     public static Boolean isAthletePopular(Integer athleteId) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
+        Athlete a = getAthleteProfile(athleteId);
+//        if an athlete is considered active then he won't observe any sports
+        if (a.getId() == -1) {
+            return false;
+        }
         boolean ret = false;
         int sport_id;
         try {
