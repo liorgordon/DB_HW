@@ -115,11 +115,11 @@ public class Solution {
         try {
 
             /*=================ShareSport View=============================== */
-            pstmt = connection.prepareStatement("CREATE View ShareSport(athlete1_id, athlete2_id, sport_id, athlete1_took, athlete2_took) as" +
-                    "SELECT a1.athlete_id  , a2.athlete_id , s.sport_id," +
-                    "(SELECT count(*) FROM Goes_to as g1 WHERE g1.athlete_id = a1.athlete_id and s.sport_id = g1.sport_id)," +
-                    "(SELECT count(*) FROM Goes_to as g2 WHERE g2.athlete_id = a2.athlete_id and s.sport_id = g2.sport_id)" +
-                    "FROM Athlete a1, Athlete a2, Sports s");
+            pstmt = connection.prepareStatement("CREATE View ShareSport(athlete1_id, athlete2_id, sport_id, athlete1_took, athlete2_took) as " +
+                    "SELECT a1.athlete_id  , a2.athlete_id , s.sport_id, " +
+                    "(SELECT count(*) FROM Goes_to as g1 WHERE g1.athlete_id = a1.athlete_id and s.sport_id = g1.sport_id), " +
+                    "(SELECT count(*) FROM Goes_to as g2 WHERE g2.athlete_id = a2.athlete_id and s.sport_id = g2.sport_id) " +
+                    "FROM Athlete a1, Athlete a2, Sports s;");
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
@@ -273,6 +273,18 @@ public class Solution {
             }
             return ERROR;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
 
         return OK;
     }
@@ -298,22 +310,29 @@ public class Solution {
         } catch (SQLException e) {
             return Athlete.badAthlete();
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
+
     }
 
     public static ReturnValue deleteAthlete(Athlete athlete) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        int tmp = 0;
+        Athlete a = getAthleteProfile(athlete.getId());
+        if (a.getId() == -1) {
+            return NOT_EXISTS;
+        }
         try {
-            pstmt = connection.prepareStatement(
-                    "SELECT COUNT(*) " +
-                            "FROM Athlete \n" +
-                            "WHERE athlete_id = ?;");
-            pstmt.setInt(1, athlete.getId());
-            ResultSet results = pstmt.executeQuery();
-            while (results.next()) {
-                tmp = results.getInt("COUNT");
-            }
             pstmt = connection.prepareStatement(
                     "DELETE FROM Athlete " +
                             "WHERE athlete_id = ? ;");
@@ -333,9 +352,6 @@ public class Solution {
             } catch (SQLException e) {
                 //e.printStackTrace()();
             }
-        }
-        if (tmp == 0) {
-            return NOT_EXISTS;
         }
         return OK;
     }
@@ -364,6 +380,18 @@ public class Solution {
             }
             return ERROR;
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
 
         return OK;
     }
@@ -389,22 +417,28 @@ public class Solution {
         } catch (SQLException e) {
             return Sport.badSport();
         }
+        finally {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                //e.printStackTrace()();
+            }
+        }
     }
 
     public static ReturnValue deleteSport(Sport sport) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        int tmp = 0;
+        Sport s = getSport(sport.getId());
+        if (s.getId() == -1) {
+            return NOT_EXISTS;
+        }
         try {
-            pstmt = connection.prepareStatement(
-                    "SELECT COUNT(*) " +
-                            "FROM Sport \n" +
-                            "WHERE sport_id = ?;");
-            pstmt.setInt(1, sport.getId());
-            ResultSet results = pstmt.executeQuery();
-            while (results.next()) {
-                tmp = results.getInt("COUNT");
-            }
             pstmt = connection.prepareStatement(
                     "DELETE FROM Sport " +
                             "WHERE sport_id = ? ;");
@@ -425,9 +459,6 @@ public class Solution {
                 //e.printStackTrace()();
             }
         }
-        if (tmp == 0) {
-            return NOT_EXISTS;
-        }
         return OK;
     }
 
@@ -441,7 +472,7 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            // check if athlete already joined the sport
+//             check if athlete already joined the sport
             pstmt = connection.prepareStatement("SELECT * FROM Goes_to " +
                     "WHERE sport_id=? AND athlete_id=?;");
             pstmt.setInt(1, sportId);
@@ -610,12 +641,6 @@ public class Solution {
             if (!results.next()){
                 ret = NOT_EXISTS;
             }
-            else{
-                int iVal = results.getInt("place");
-                if (results.wasNull()) {
-                    ret = NOT_EXISTS;
-                }
-            }
 
             // disqualifying athlete - nullifying their medal
             pstmt = connection.prepareStatement("UPDATE Goes_to " +
@@ -643,12 +668,6 @@ public class Solution {
     }
 
     public static ReturnValue makeFriends(Integer athleteId1, Integer athleteId2) {
-        Athlete a1 = getAthleteProfile(athleteId1);
-        Athlete a2 = getAthleteProfile(athleteId2);
-        if (a1.getId() == -1 || a2.getId() == -1) {
-            return NOT_EXISTS;
-        }
-
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
@@ -661,6 +680,7 @@ public class Solution {
             pstmt.setInt(4, athleteId1);
             ResultSet results = pstmt.executeQuery();
             if (results.next()) {
+//                if the entry exists this means it's with good params and the athlete exist
                 return ALREADY_EXISTS;
             }
 
@@ -678,6 +698,10 @@ public class Solution {
             if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue()) {
                 return BAD_PARAMS;
             }
+            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.FOREIGN_KEY_VIOLATION.getValue()) {
+                return NOT_EXISTS;
+            }
+
             return ERROR;
         } finally {
             try {
@@ -857,7 +881,7 @@ public class Solution {
                 number_of_medals = results.getInt("COUNT");
             }
         } catch (SQLException e) {
-            return number_of_medals;
+            return 0;
         }
         finally {
             try {
@@ -889,7 +913,7 @@ public class Solution {
                 income = results.getInt("SUM");
             }
         } catch (SQLException e) {
-            return income;
+            return 0;
         }
         finally {
             try {
@@ -924,7 +948,7 @@ public class Solution {
                 best_country = results.getString("country");
             }
         } catch (SQLException e) {
-            return best_country;
+            return "";
         }
         finally {
             try {
@@ -949,7 +973,6 @@ public class Solution {
             pstmt = connection.prepareStatement(
                     "SELECT city " +
                             "FROM Sport as s " +
-                            "LEFT JOIN Goes_to as g ON g.Sport_id = s.Sport_id " +
                             "GROUP BY city HAVING COUNT(distinct s.Sport_id)>0 " +
                             "ORDER BY SUM(athlete_count)*1.0/COUNT(distinct s.Sport_id) DESC, s.city desc;" );
             ResultSet results = pstmt.executeQuery();
@@ -961,7 +984,7 @@ public class Solution {
                 popular_city = "";
             }
         } catch (SQLException e) {
-            return popular_city;
+            return null;
         }
         finally {
             try {
