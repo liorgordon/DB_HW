@@ -1047,8 +1047,7 @@ public class Solution {
             pstmt = connection.prepareStatement(
                     "SELECT athlete_id\n" +
                             "FROM Medals\n" +
-                            "GROUP BY athlete_id\n" +
-                            "ORDER BY SUM(3*gold + 2*silver + 1*bronze) DESC, athlete_id ASC\n" +
+                            "ORDER BY 3*gold + 2*silver + 1*bronze DESC, athlete_id ASC\n" +
                             "LIMIT 10");
             ResultSet results = pstmt.executeQuery();
             while (results.next()) {
