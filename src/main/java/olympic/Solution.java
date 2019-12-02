@@ -472,15 +472,15 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            // check if athlete already joined the sport
-//            pstmt = connection.prepareStatement("SELECT * FROM Goes_to " +
-//                    "WHERE sport_id=? AND athlete_id=?;");
-//            pstmt.setInt(1, sportId);
-//            pstmt.setInt(2, athleteId);
-//            ResultSet results = pstmt.executeQuery();
-//            if (results.next()) {
-//                return ALREADY_EXISTS;
-//            }
+//             check if athlete already joined the sport
+            pstmt = connection.prepareStatement("SELECT * FROM Goes_to " +
+                    "WHERE sport_id=? AND athlete_id=?;");
+            pstmt.setInt(1, sportId);
+            pstmt.setInt(2, athleteId);
+            ResultSet results = pstmt.executeQuery();
+            if (results.next()) {
+                return ALREADY_EXISTS;
+            }
 
             // if athlete is active - update athletes’ counter, add hes fee
             int fee = 100;
@@ -502,9 +502,6 @@ public class Solution {
             pstmt.execute();
         } catch (SQLException e) {
             //e.printStackTrace()();
-            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.UNIQUE_VIOLATION.getValue()) {
-                return ALREADY_EXISTS;
-            }
             return ERROR;
         } finally {
             try {
@@ -671,26 +668,21 @@ public class Solution {
     }
 
     public static ReturnValue makeFriends(Integer athleteId1, Integer athleteId2) {
-        Athlete a1 = getAthleteProfile(athleteId1);
-        Athlete a2 = getAthleteProfile(athleteId2);
-        if (a1.getId() == -1 || a2.getId() == -1) {
-            return NOT_EXISTS;
-        }
-
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-//            // check if athletes are already friends
-//            pstmt = connection.prepareStatement("SELECT * FROM Friends " +
-//                    "WHERE (Athlete1_ID=? AND Athlete2_ID=?) OR (Athlete1_ID=? AND Athlete2_ID=?);");
-//            pstmt.setInt(1, athleteId1);
-//            pstmt.setInt(2, athleteId2);
-//            pstmt.setInt(3, athleteId2);
-//            pstmt.setInt(4, athleteId1);
-//            ResultSet results = pstmt.executeQuery();
-//            if (results.next()) {
-//                return ALREADY_EXISTS;
-//            }
+            // check if athletes are already friends
+            pstmt = connection.prepareStatement("SELECT * FROM Friends " +
+                    "WHERE (Athlete1_ID=? AND Athlete2_ID=?) OR (Athlete1_ID=? AND Athlete2_ID=?);");
+            pstmt.setInt(1, athleteId1);
+            pstmt.setInt(2, athleteId2);
+            pstmt.setInt(3, athleteId2);
+            pstmt.setInt(4, athleteId1);
+            ResultSet results = pstmt.executeQuery();
+            if (results.next()) {
+//                if the entry exists this means it's with good params and the athlete exist
+                return ALREADY_EXISTS;
+            }
 
             // create friendship
             pstmt = connection.prepareStatement("INSERT INTO Friends " +
@@ -706,8 +698,8 @@ public class Solution {
             if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.CHECK_VIOLATION.getValue()) {
                 return BAD_PARAMS;
             }
-            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.UNIQUE_VIOLATION.getValue()) {
-                return ALREADY_EXISTS;
+            if (Integer.valueOf(e.getSQLState()) == PostgreSQLErrorCodes.FOREIGN_KEY_VIOLATION.getValue()) {
+                return NOT_EXISTS;
             }
 
             return ERROR;
@@ -992,7 +984,7 @@ public class Solution {
                 popular_city = "";
             }
         } catch (SQLException e) {
-            return popular_city;
+            return null;
         }
         finally {
             try {

@@ -99,6 +99,12 @@ public class BasicAPITests extends AbstractTest {
         res = Solution.makeFriends(4,5);
         assertEquals(OK, res);
 
+        res = Solution.makeFriends(-1, 2000);
+        assertEquals(NOT_EXISTS, res);
+
+        res = Solution.makeFriends(10, 2000);
+        assertEquals(NOT_EXISTS, res);
+
         res = Solution.makeFriends(4,4);
         assertEquals(BAD_PARAMS, res);
 
@@ -213,7 +219,7 @@ public class BasicAPITests extends AbstractTest {
         assertEquals(OK, res);
 
         res = Solution.athleteDisqualified(1, 3);
-        assertEquals(NOT_EXISTS, res);
+        assertEquals(OK, res);
         res = Solution.athleteDisqualified(1, 100);
         assertEquals(NOT_EXISTS, res);
         res = Solution.athleteDisqualified(2, 3);
