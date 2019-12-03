@@ -46,7 +46,7 @@ public class MostRatedAthletesTest extends AbstractTest{
         ret = Solution.confirmStanding(1,1, 1);
         assertEquals(ReturnValue.OK, ret);
         ArrayList<Integer> res  = Solution.getMostRatedAthletes();
-        ArrayList<Integer> expected = new ArrayList<>(Arrays.asList(1));
+        ArrayList<Integer> expected = new ArrayList<>(Arrays.asList(1, 2));
         assertEquals(expected, res);
     }
 
@@ -124,7 +124,7 @@ public class MostRatedAthletesTest extends AbstractTest{
     @Test
     public void testNotExists() {
         ArrayList<Integer> res  = Solution.getMostRatedAthletes();
-        ArrayList<Integer> expected = new ArrayList<>();
+        ArrayList<Integer> expected = new ArrayList<>(Arrays.asList(1,2));
         assertEquals(expected, res);
     }
 

@@ -626,7 +626,7 @@ public class Solution {
         Athlete a = getAthleteProfile(athleteId);
         Sport s = getSport(sportId);
         ReturnValue ret = OK;
-        if (a.getId() == -1 || s.getId() == -1) {
+        if (a.getId() == -1 || s.getId() == -1 || a.getIsActive() == false) {
             return NOT_EXISTS;
         }
 
@@ -980,7 +980,7 @@ public class Solution {
                     "SELECT city " +
                             "FROM Sport as s " +
                             "GROUP BY city HAVING COUNT(distinct s.Sport_id)>0 " +
-                            "ORDER BY SUM(athlete_count)*1.0/COUNT(distinct s.Sport_id) DESC, s.city desc;" );
+                            "ORDER BY SUM(athlete_count)*1.0/COUNT(distinct s.Sport_id) DESC, s.city ASC;" );
             ResultSet results = pstmt.executeQuery();
 
             if (results.next()) {
@@ -1123,7 +1123,7 @@ public class Solution {
                     "SELECT sa.sport_id\n" +
                             "FROM\n" +
                             "(SELECT close_athlete_id FROM CloseAthlete WHERE athlete_id = ?) ca,\n" +
-                            "(SELECT s.sport_id, g.athlete_id from Sport s LEFT JOIN Goes_to g ON s.sport_id=g.sport_id) sa\n" +
+                            "(SELECT sport_id, athlete_id FROM Goes_to ) sa\n" +
                             "WHERE sa.sport_id NOT IN (SELECT sport_id FROM Goes_to WHERE athlete_id = ?)\n" +
                             "GROUP BY sa.sport_id\n" +
                             "ORDER BY COUNT(close_athlete_id = sa.athlete_id OR NULL) DESC, sa.sport_id ASC\n" +
